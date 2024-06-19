@@ -52,9 +52,16 @@ export async function getCommitsBetween(owner, repo, startCommit, endCommit) {
   }
 }
 
-
 // Hàm để lấy danh sách pull requests với các filter
-export async function listPullRequests(owner, repo, state = 'open', labels = '', milestone = '', per_page = 30, page = 1) {
+export async function listPullRequests(functionArgs) {
+  const owner = functionArgs.owner
+  const repo = functionArgs.repo
+  const state = functionArgs.state ?? 'open'
+  const labels = functionArgs.labels ?? ''
+  const milestone = functionArgs.milestone ?? ''
+  const per_page = functionArgs.per_page ?? 30
+  const page = functionArgs.page ?? 1
+  
   try {
     const { data: pullRequests } = await octokit.pulls.list({
       owner: owner,
@@ -98,6 +105,49 @@ export async function listPullRequests(owner, repo, state = 'open', labels = '',
     console.error("Error fetching pull requests: ", error);
     return null;
   }
+}
+
+export const listPullRequests_desc = {
+  type: "function",
+  function: {
+    name: "listPullRequests",
+    description: "Get the list of pull requests for a given repository with specific filters",
+    parameters: {
+      type: "object",
+      properties: {
+        owner: {
+          type: "string",
+          description: "The owner of the repository",
+        },
+        repo: {
+          type: "string",
+          description: "The name of the repository",
+        },
+        state: {
+          type: "string",
+          enum: ["all", "open", "closed"],
+          description: "The state of the pull requests",
+        },
+        labels: {
+          type: "string",
+          description: "A comma-separated list of labels",
+        },
+        milestone: {
+          type: "string",
+          description: "The milestone of the pull requests",
+        },
+        per_page: {
+          type: "integer",
+          description: "The number of results per page",
+        },
+        page: {
+          type: "integer",
+          description: "The page number",
+        },
+      },
+      required: ["owner", "repo"],
+    },
+  },
 }
 
 // Hàm để lấy thông tin pull request và danh sách commit

@@ -7,7 +7,8 @@ import {
   getPullRequestDetails,
   getPullRequestComments,
   getCommitsBetween,
-  listPullRequests
+  listPullRequests,
+  listPullRequests_desc
 }  from './git.js'
 
 const openai = new OpenAI({
@@ -20,49 +21,11 @@ export async function requestWithFunctions(requestMessage) {
     { role: "user", content: requestMessage },
   ];
   const tools = [
-    {
-      type: "function",
-      function: {
-        name: "listPullRequests",
-        description: "Get the list of pull requests for a given repository with specific filters",
-        parameters: {
-          type: "object",
-          properties: {
-            owner: {
-              type: "string",
-              description: "The owner of the repository",
-            },
-            repo: {
-              type: "string",
-              description: "The name of the repository",
-            },
-            state: {
-              type: "string",
-              enum: ["all", "open", "closed"],
-              description: "The state of the pull requests",
-            },
-            labels: {
-              type: "string",
-              description: "A comma-separated list of labels",
-            },
-            milestone: {
-              type: "string",
-              description: "The milestone of the pull requests",
-            },
-            per_page: {
-              type: "integer",
-              description: "The number of results per page",
-            },
-            page: {
-              type: "integer",
-              description: "The page number",
-            },
-          },
-          required: ["owner", "repo"],
-        },
-      },
-    },
+    listPullRequests_desc,
   ];
+  const availableFunctions = {
+    listPullRequests: listPullRequests,
+  };
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -75,29 +38,13 @@ export async function requestWithFunctions(requestMessage) {
   // Step 2: check if the model wanted to call a function
   const toolCalls = responseMessage.tool_calls;
   if (toolCalls) {
-    // Step 3: call the function
-    const availableFunctions = {
-      listPullRequests: listPullRequests,
-    }; // only one function in this example, but you can have multiple
     messages.push(responseMessage); // extend conversation with assistant's reply
     for (const toolCall of toolCalls) {
       const functionName = toolCall.function.name;
       const functionToCall = availableFunctions[functionName];
       const functionArgs = JSON.parse(toolCall.function.arguments);
-      // console.log(functionArgs)
-      const functionResponse = await functionToCall(
-        functionArgs.owner,
-        functionArgs.repo,
-        functionArgs.state,
-        functionArgs.labels,
-        functionArgs.milestone,
-        functionArgs.per_page,
-        functionArgs.page
-      );
-      // messages.push({
-      //   role: "assistant",
-      //   content: JSON.stringify(response),
-      // })
+      const functionResponse = await functionToCall(functionArgs);
+      
       messages.push({
         tool_call_id: toolCall.id,
         role: "tool",
