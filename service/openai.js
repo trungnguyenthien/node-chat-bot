@@ -59,3 +59,84 @@ export async function requestWithFunctions(requestMessage) {
     return secondResponse.choices[0].message.content;
   }
 }
+
+async function streamWithFunctions(requestMessage, res) {
+  const messages = [{ role: "user", content: requestMessage }];
+  const tools = [listPullRequests_desc];
+  const availableFunctions = { listPullRequests: listPullRequests };
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: messages,
+    tools: tools,
+    tool_choice: "auto",
+    stream: true,
+  });
+
+  response.data.on('data', async (data) => {
+    const text = data.choices[0].delta?.content || '';
+    if (text) {
+      console.log(`stream - ${text}\n`)
+      res.write(`data: ${text}\n\n`);
+    }
+
+    const responseMessage = data.choices[0].message;
+    if (responseMessage) {
+      const toolCalls = responseMessage.tool_calls;
+      if (toolCalls) {
+        messages.push(responseMessage);
+        for (const toolCall of toolCalls) {
+          const functionName = toolCall.function.name;
+          const functionToCall = availableFunctions[functionName];
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          const functionResponse = await functionToCall(functionArgs);
+
+          messages.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: functionName,
+            content: JSON.stringify(functionResponse),
+          });
+        }
+
+        const secondResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: messages,
+          stream: true,
+        });
+
+        secondResponse.data.on('data', (data) => {
+          const text = data.choices[0].delta?.content || '';
+          if (text) {
+            console.log(`stream - ${text}\n`)
+            res.write(`data: ${text}\n\n`);
+          }
+        });
+
+        secondResponse.data.on('end', () => {
+          res.end();
+        });
+
+        secondResponse.data.on('error', (error) => {
+          console.error(error);
+          res.write(`data: ERROR\n\n`);
+          res.end();
+        });
+      }
+    }
+  });
+
+  response.data.on('end', () => {
+    res.end();
+  });
+
+  response.data.on('error', (error) => {
+    console.error(error);
+    res.write(`data: ERROR\n\n`);
+    res.end();
+  });
+}
