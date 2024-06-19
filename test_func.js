@@ -1,14 +1,14 @@
-require('dotenv').config();
-// import OpenAI from "openai";
-const { OpenAI } = require("openai");
+import dotenv from 'dotenv';
+dotenv.config();
+import { OpenAI } from "openai";
 
-const {
+import {
   getPullRequestInfo,
   getPullRequestDetails,
   getPullRequestComments,
   getCommitsBetween,
   listPullRequests
-} = require('./service/git')
+}  from './service/git.js'
 
 
 const openai = new OpenAI({
@@ -110,7 +110,7 @@ async function runConversation() {
       model: "gpt-4o",
       messages: messages,
     }); // get a new response from the model where it can see the function response
-    return secondResponse.choices;
+    return secondResponse.choices[0].message.content;
   }
 }
 

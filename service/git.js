@@ -1,4 +1,4 @@
-const { Octokit } = require("@octokit/rest");
+import { Octokit } from "@octokit/rest";
 
 // Tạo một instance của Octokit với authentication token
 const octokit = new Octokit({
@@ -8,7 +8,7 @@ const octokit = new Octokit({
 
 
 // Hàm để lấy tất cả bình luận trong pull request
-async function getPullRequestComments(owner, repo, pullNumber) {
+export async function getPullRequestComments(owner, repo, pullNumber) {
   try {
     // Gọi API để lấy tất cả bình luận trong pull request
     const { data } = await octokit.issues.listComments({
@@ -29,7 +29,7 @@ async function getPullRequestComments(owner, repo, pullNumber) {
 }
 
 // Hàm để lấy tất cả commit giữa hai commit cụ thể
-async function getCommitsBetween(owner, repo, startCommit, endCommit) {
+export async function getCommitsBetween(owner, repo, startCommit, endCommit) {
   try {
     // Gọi API để lấy danh sách commit
     const { data: commits } = await octokit.repos.compareCommits({
@@ -54,7 +54,7 @@ async function getCommitsBetween(owner, repo, startCommit, endCommit) {
 
 
 // Hàm để lấy danh sách pull requests với các filter
-async function listPullRequests(owner, repo, state = 'open', labels = '', milestone = '', per_page = 30, page = 1) {
+export async function listPullRequests(owner, repo, state = 'open', labels = '', milestone = '', per_page = 30, page = 1) {
   try {
     const { data: pullRequests } = await octokit.pulls.list({
       owner: owner,
@@ -101,7 +101,7 @@ async function listPullRequests(owner, repo, state = 'open', labels = '', milest
 }
 
 // Hàm để lấy thông tin pull request và danh sách commit
-async function getPullRequestInfo(owner, repo, pullNumber) {
+export async function getPullRequestInfo(owner, repo, pullNumber) {
   try {
     // Lấy thông tin pull request
     const { data: pullRequest } = await octokit.pulls.get({
@@ -146,7 +146,7 @@ async function getPullRequestInfo(owner, repo, pullNumber) {
 }
 
 // Hàm để lấy thông tin chi tiết về pull request
-async function getPullRequestDetails(owner, repo, pullNumber) {
+export async function getPullRequestDetails(owner, repo, pullNumber) {
   try {
     // Lấy thông tin cơ bản về pull request
     const { data: pullRequest } = await octokit.pulls.get({
@@ -259,11 +259,10 @@ async function getPullRequestDetails(owner, repo, pullNumber) {
   }
 }
 
-
-module.exports = {
-  getPullRequestInfo,
-  getPullRequestDetails,
-  getPullRequestComments,
-  getCommitsBetween,
-  listPullRequests
-};
+// export default {
+//   getPullRequestInfo,
+//   getPullRequestDetails,
+//   getPullRequestComments,
+//   getCommitsBetween,
+//   listPullRequests
+// };
