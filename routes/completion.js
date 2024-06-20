@@ -1,6 +1,7 @@
 import express from 'express';
 import { OpenAI } from "openai";
-import { requestWithFunctions, streamWithFunctions } from '../service/openai.js'
+import { v4 as uuidv4 } from 'uuid';
+import { requestWithFunctions, streamWithFunctions2 } from '../service/openai.js'
 const router = express.Router();
 
 const openai = new OpenAI({
@@ -19,33 +20,41 @@ router.post('/', async (req, res) => {
   }
 });
 
+function sse_message(data) {
+  return `data: ${data}\n\n`
+}
 
 let clients = {};
 router.get('/events', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+
   const guid = uuidv4().replace(/-/g, '');
 
   clients[guid] = {
     guid: guid,
     res: res
   };
-
+  console.log(`data:<guid>${guid}`)
   // Gửi thông báo khi kết nối SSE được thiết lập
-  res.write(`data: Connected to SSE server with client ID: ${guid}\n\n`);
+  res.write(sse_message(`<guid>${guid}`));
 
   req.on('close', () => {
     console.log(`${clientId} Connection closed`);
-    clients = clients.filter(client => client.id !== clientId);
+    delete clients[guid];  // Sử dụng delete thay vì filter
   });
 });
 
 router.post('/stream', async (req, res) => {
   try {
-    const { message, clientId } = req.body;
-    const clientRes = clients[clientId].res
-    await streamWithFunctions(message, clientRes)
+    const rawMessage = req.rawBody
+    console.log(`rawMessage = ${rawMessage}`)
+    const objectMsg = JSON.parse(rawMessage)
+    console.log(`objectMsg = ${objectMsg.clientId}`)
+    console.log(clients)
+    const clientRes = clients[objectMsg.clientId].res
+    await streamWithFunctions2(objectMsg.message, clientRes)
     // const response = await s(message)
     // res.status(200).json({ status: 200, error: "" });
   } catch (error) {
