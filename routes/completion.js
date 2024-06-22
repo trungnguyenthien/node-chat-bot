@@ -21,7 +21,16 @@ router.post('/', async (req, res) => {
 });
 
 function sse_message(data) {
-  return `data: ${data}\n\n`
+  console.log(`stream: ${data}`)
+  return `data: ${textToBase64(data)}\n\n`
+}
+
+function textToBase64(text) {
+  // Chuyển đổi text thành Buffer
+  const buffer = Buffer.from(text, 'utf-8');
+  
+  // Chuyển đổi Buffer thành chuỗi base64
+  return buffer.toString('base64');
 }
 
 let clients = {};
@@ -63,5 +72,6 @@ router.post('/stream', async (req, res) => {
     res.status(500).json({ status: 500, error: error.message });
   }
 });
+
 
 export default router;

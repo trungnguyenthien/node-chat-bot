@@ -114,5 +114,13 @@ export async function streamWithFunctions2(requestMessage, res) {
 
 function sse_message(data) {
   console.log(`stream: ${data}`)
-  return `data: ${data}\n\n`
+  return `data: ${textToBase64(data)}\n\n`
+}
+
+function textToBase64(text) {
+  // Chuyển đổi text thành Buffer
+  const buffer = Buffer.from(text, 'utf-8');
+  
+  // Chuyển đổi Buffer thành chuỗi base64
+  return buffer.toString('base64');
 }
