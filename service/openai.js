@@ -11,6 +11,20 @@ import {
   listPullRequests_desc
 } from './git.js'
 
+import {
+  register_chart,
+  register_chart_desc
+} from './gen_chart.js'
+
+const tools = [
+  listPullRequests_desc,
+  register_chart_desc
+];
+const availableFunctions = {
+  listPullRequests: listPullRequests,
+  register_chart: register_chart
+};
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // Set the API key here
 });
@@ -96,6 +110,7 @@ async function handle_stream_response(response, res) {
     if (func_name === "") {
       const [choice] = chunk.choices;
       const { content } = choice.delta;
+      // console.log(`content = ${JSON.stringify(content)}`)
       res.write(sse_message(content))
     } else {
       func_arguments += delta.tool_calls[0].function.arguments
@@ -117,14 +132,13 @@ async function handle_stream_response(response, res) {
 export async function streamWithFunctions2(requestMessage, res) {
   // Step 1: send the conversation and available functions to the model
   const messages = [
+    { role: "system", content: `You are an assistant that supports data analysis from Github and Jira.
+You are not responsible for answering any questions beyond issues related to Github and Jira data.
+The content you return should be displayed in markdown format, including tables and images.
+If the user requests to draw charts, use the provided "register_chart" function, return the image URL, and display it in markdown.
+` },
     { role: "user", content: requestMessage },
   ];
-  const tools = [
-    listPullRequests_desc,
-  ];
-  const availableFunctions = {
-    listPullRequests: listPullRequests,
-  };
   let response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: messages,
@@ -171,6 +185,10 @@ function sse_message(data) {
 }
 
 function textToBase64(text) {
-  const buffer = Buffer.from(text, 'utf-8');
-  return buffer.toString('base64');
+  try {
+    const buffer = Buffer.from(text, 'utf-8');
+    return buffer.toString('base64');
+  } catch (error) {
+    console.log(`ERROR TEXT = ${text}`)
+  }
 }

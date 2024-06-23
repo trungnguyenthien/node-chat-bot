@@ -56,8 +56,8 @@ router.post('/stream', async (req, res) => {
     const rawMessage = req.rawBody
     console.log(`rawMessage = ${rawMessage}`)
     const objectMsg = JSON.parse(rawMessage)
-    console.log(`objectMsg = ${objectMsg.clientId}`)
-    console.log(clients)
+    // console.log(`objectMsg = ${objectMsg.clientId}`)
+    // console.log(clients)
     const clientRes = clients[objectMsg.clientId].res
     await streamWithFunctions2(objectMsg.message, clientRes)
     // const response = await s(message)

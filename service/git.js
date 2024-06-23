@@ -99,7 +99,7 @@ export async function listPullRequests(functionArgs) {
       assignees: pr.assignees.map(assignee => assignee.login),
       requested_reviewers: pr.requested_reviewers.map(reviewer => reviewer.login),
     }));
-
+    console.log(`${JSON.stringify(functionArgs)}, result = ${pullRequestDetails.length}}`)
     return pullRequestDetails;
   } catch (error) {
     console.error("Error fetching pull requests: ", error);
