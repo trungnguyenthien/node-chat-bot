@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import {
-  getPullRequestInfo,
+  pr_info,
   getPullRequestDetails,
   getPullRequestComments,
   getCommitsBetween,

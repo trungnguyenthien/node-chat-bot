@@ -150,8 +150,12 @@ export const listPullRequests_desc = {
   },
 }
 
-// Hàm để lấy thông tin pull request và danh sách commit
-export async function getPullRequestInfo(owner, repo, pullNumber) {
+export async function pr_info(functionArgs) {
+  const owner = functionArgs.owner;
+  const repo = functionArgs.repo;
+  const pullNumber = functionArgs.pullNumber ?? '';
+  const ignores = functionArgs.ignores ?? [];
+
   try {
     // Lấy thông tin pull request
     const { data: pullRequest } = await octokit.pulls.get({
@@ -167,33 +171,63 @@ export async function getPullRequestInfo(owner, repo, pullNumber) {
       state: pullRequest.state,
       created_at: pullRequest.created_at,
       merged_at: pullRequest.merged_at,
+      closed_at: pullRequest.closed_at,
+      diff_url: pullRequest.diff_url,
+      body: pullRequest.body,
+      mergeable: pullRequest.mergeable,
+      merged: pullRequest.merged,
+      labels: pullRequest.labels.map(lb => ({ name: lb.name, id: lb.id }))
     };
 
-    // Lấy danh sách commit trong pull request
-    const { data: commits } = await octokit.pulls.listCommits({
-      owner: owner,
-      repo: repo,
-      pull_number: pullNumber,
-    });
+    if (!ignores.includes("commits")) {
+      // Lấy danh sách commit trong pull request
+      const { data: commits } = await octokit.pulls.listCommits({
+        owner: owner,
+        repo: repo,
+        pull_number: pullNumber,
+      });
 
-    // Tạo array để lưu thông tin các commit
-    const commitList = commits.map(commit => ({
-      sha: commit.sha,
-      author: commit.commit.author.name,
-      date: commit.commit.author.date,
-      message: commit.commit.message,
-    }));
+      // Tạo array để lưu thông tin các commit
+      pullRequestInfo.commits = await Promise.all(commits.map(async commit => {
+        let files = [];
 
-    // Trả về object chứa thông tin pull request và danh sách commit
-    return {
-      pullRequestInfo,
-      commitList,
-    };
+        if (!ignores.includes("commit_files")) {
+          // Lấy chi tiết commit để lấy thông tin về file changes
+          const { data: commitDetails } = await octokit.repos.getCommit({
+            owner: owner,
+            repo: repo,
+            ref: commit.sha,
+          });
+
+          // Tạo array để lưu thông tin các file thay đổi trong commit
+          files = commitDetails.files.map(file => ({
+            filename: file.filename,
+            additions: file.additions,
+            deletions: file.deletions,
+            changes: file.changes,
+            status: file.status,
+          }));
+        }
+
+        return {
+          sha: commit.sha,
+          author: commit.commit.author.name,
+          date: commit.commit.author.date,
+          message: commit.commit.message,
+          files: files,
+        };
+      }));
+    }
+
+    // Trả về object chứa thông tin pull request và danh sách commit (nếu có)
+    return pullRequestInfo;
   } catch (error) {
     console.error("Error fetching pull request info: ", error);
     return null;
   }
 }
+
+
 
 // Hàm để lấy thông tin chi tiết về pull request
 export async function getPullRequestDetails(owner, repo, pullNumber) {
@@ -308,11 +342,3 @@ export async function getPullRequestDetails(owner, repo, pullNumber) {
     return null;
   }
 }
-
-// export default {
-//   getPullRequestInfo,
-//   getPullRequestDetails,
-//   getPullRequestComments,
-//   getCommitsBetween,
-//   listPullRequests
-// };
