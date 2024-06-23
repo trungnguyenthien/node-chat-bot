@@ -1,35 +1,31 @@
 import express from 'express';
 import { OpenAI } from "openai";
 import { v4 as uuidv4 } from 'uuid';
-import { requestWithFunctions, streamWithFunctions2 } from '../service/openai.js'
+import { streamWithFunctions2 } from '../service/openai.js'
 const router = express.Router();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // Set the API key here
 });
 
-router.post('/', async (req, res) => {
-  try {
-    const message = req.rawBody;
-    const response = await requestWithFunctions(message)
-    res.status(200).json({ status: 200, error: response });
-  } catch (error) {
-    // Xử lý lỗi nếu có
-    console.error(error);
-    res.status(500).json({ status: 500, error: error.message });
-  }
-});
+// router.post('/', async (req, res) => {
+//   try {
+//     const message = req.rawBody;
+//     const response = await requestWithFunctions(message)
+//     res.status(200).json({ status: 200, error: response });
+//   } catch (error) {
+//     // Xử lý lỗi nếu có
+//     console.error(error);
+//     res.status(500).json({ status: 500, error: error.message });
+//   }
+// });
 
 function sse_message(data) {
-  // console.log(`stream: ${data}`)
   return `data: ${textToBase64(data)}\n\n`
 }
 
 function textToBase64(text) {
-  // Chuyển đổi text thành Buffer
   const buffer = Buffer.from(text, 'utf-8');
-  
-  // Chuyển đổi Buffer thành chuỗi base64
   return buffer.toString('base64');
 }
 
