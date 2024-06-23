@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
 });
 
 function sse_message(data) {
-  console.log(`stream: ${data}`)
+  // console.log(`stream: ${data}`)
   return `data: ${textToBase64(data)}\n\n`
 }
 
