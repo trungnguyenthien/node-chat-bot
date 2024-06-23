@@ -106,14 +106,16 @@ async function handle_stream_response(response, res) {
       break
     }
 
-    // From 2nd chunk
-    if (func_name === "") {
+    if(delta && delta.tool_calls && delta.tool_calls[0] && delta.tool_calls[0].function && delta.tool_calls[0].function.arguments) {
+      func_arguments += delta.tool_calls[0].function.arguments
+    } else if (delta && delta.content) {
+      res.write(sse_message(delta.content))
+    } else {
       const [choice] = chunk.choices;
       const { content } = choice.delta;
       // console.log(`content = ${JSON.stringify(content)}`)
+      console.log(`chunk = ${JSON.stringify(chunk)}`)
       res.write(sse_message(content))
-    } else {
-      func_arguments += delta.tool_calls[0].function.arguments
     }
   }
 
