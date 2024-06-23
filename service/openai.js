@@ -67,6 +67,8 @@ async function handle_stream_response(response, res) {
   let func_arguments = ""
   let finish_reason = ""
   let call_id = ""
+  let tool_calls = {}
+
   for await (const chunk of response) {
     console.log(`chunk = ${JSON.stringify(chunk)}`)
 
@@ -81,14 +83,16 @@ async function handle_stream_response(response, res) {
       if (delta.tool_calls) {
         func_name = delta.tool_calls[0].function.name
         call_id = delta.tool_calls[0].id
-        console.log(`func_name = ${func_name}`)
+
+        tool_calls.id = call_id
+        tool_calls.type = delta.tool_calls[0].type
+        tool_calls.function = delta.tool_calls[0].function
       }
       continue
     }
 
     if (choice0.finish_reason) {
       finish_reason = choice0.finish_reason
-      console.log(`finish_reason = ${finish_reason}`)
       break
     }
 
@@ -106,11 +110,12 @@ async function handle_stream_response(response, res) {
   if (func_name === "") {
     return finish_reason
   }
-
+  tool_calls.function.arguments = func_arguments
   return {
     id: call_id,
     function: func_name,
-    arguments: JSON.parse(func_arguments)
+    arguments: JSON.parse(func_arguments),
+    tool_calls: tool_calls
   }
 }
 
@@ -132,10 +137,6 @@ export async function streamWithFunctions2(requestMessage, res) {
     stream: true,
     tool_choice: "auto",
   });
-  // for await (const chunk of response) {
-  //   console.log(`chunk = ${JSON.stringify(chunk)}`)
-  // }
-  console.log(`send first message: ${JSON.stringify(messages)}`)
 
   let finish_reason = null
   finish_reason = await handle_stream_response(response, res)
@@ -148,6 +149,11 @@ export async function streamWithFunctions2(requestMessage, res) {
       const functionResponse = await functionToCall(functionArgs);
 
       messages.push({
+        role: "assistant",
+        tool_calls: [finish_reason.tool_calls],
+      })
+
+      messages.push({
         tool_call_id: finish_reason.id,
         role: "tool",
         name: functionName,
@@ -157,9 +163,9 @@ export async function streamWithFunctions2(requestMessage, res) {
       response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: messages,
-        // tools: tools,
+        tools: tools,
         stream: true,
-        // tool_choice: "auto",
+        tool_choice: "auto",
       });
       console.log(`send next message = ${JSON.stringify(messages)}`)
       finish_reason = await handle_stream_response(response, res)
