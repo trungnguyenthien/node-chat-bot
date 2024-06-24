@@ -88,26 +88,30 @@ async function handle_stream_response(response, res) {
     
     const choice0 = chunk.choices[0]
     const delta = choice0.delta
-    if (is_first_chunk) {
-      is_first_chunk = false
-      if (delta.tool_calls) {
-        func_name = delta.tool_calls[0].function.name
-        call_id = delta.tool_calls[0].id
-
-        tool_calls.id = call_id
-        tool_calls.type = delta.tool_calls[0].type
-        tool_calls.function = delta.tool_calls[0].function
-      }
-      continue
-    }
-
+    
     if (choice0.finish_reason) {
       finish_reason = choice0.finish_reason
       break
     }
+
+    if(delta && delta.tool_calls && delta.tool_calls[0] && delta.tool_calls[0].function && delta.tool_calls[0].function.name) {
+      let new_func_name = delta.tool_calls[0].function.name
+      func_name = new_func_name
+      call_id = delta.tool_calls[0].id
+      func_arguments = ""
+
+      tool_calls.id = call_id
+      tool_calls.type = delta.tool_calls[0].type
+      tool_calls.function = delta.tool_calls[0].function
+      continue
+    }
+
     if(delta && delta.tool_calls && delta.tool_calls[0] && delta.tool_calls[0].function && delta.tool_calls[0].function.arguments) {
       func_arguments += delta.tool_calls[0].function.arguments
-    } else if (delta && delta.content) {
+      continue
+    } 
+    
+    if (delta && delta.content) {
       res.write(sse_message(delta.content))
     } else {
       const [choice] = chunk.choices;
