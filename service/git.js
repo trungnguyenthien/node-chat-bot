@@ -1,4 +1,5 @@
 import { Octokit } from "@octokit/rest";
+import _ from "lodash";
 
 // Tạo một instance của Octokit với authentication token
 const octokit = new Octokit({
@@ -61,7 +62,7 @@ export async function listPullRequests(functionArgs) {
   const milestone = functionArgs.milestone ?? ''
   const per_page = functionArgs.per_page ?? 30
   const page = functionArgs.page ?? 1
-  
+
   try {
     const { data: pullRequests } = await octokit.pulls.list({
       owner: owner,
@@ -341,4 +342,139 @@ export async function getPullRequestDetails(owner, repo, pullNumber) {
     console.error("Error fetching pull request details: ", error);
     return null;
   }
+}
+
+
+export async function searchPullRequests(functionArgs) {
+  // const q = functionArgs.q
+  const owner = 'apple'
+  const repo_name = 'swift'
+
+  const fields = [
+    'state', 
+    'title',
+    'user_login',
+    'body',
+    'label_names',
+    'milestone',
+    'created_at',
+    'closed_at',
+    'merged_at',
+    'assignees',
+    'html_url',
+  ]
+
+  const group_field = `label_names`
+
+  const need_pr_items_ingroup = false
+
+  const PER_PAGE = 100
+  let start_page = 1
+
+  try {
+    let all_prs = []
+
+    while (true) {
+      const response = await octokit.search.issuesAndPullRequests({
+        q: '"bug"+is:issue+repos:"apple/swift"+created:>=2023-01-01',
+        sort: 'created',
+        order: 'desc',
+        page: start_page,        // Trang đầu tiên
+        per_page: PER_PAGE,   // Số lượng kết quả mỗi trang
+      });
+      console.log(`GET PAGE ${start_page}, result = ${response.data.items.length}`)
+
+      // Tạo array để lưu trữ các thông tin cần thiết của pull requests
+      let pullRequestDetails = response.data.items.map(pr => ({
+        html_url: pr.html_url,
+        number: pr.number,
+        state: pr.state,
+        lock: pr.lock,
+        title: pr.title,
+        user_login: pr.user.login,
+        body: pr.body,
+        label_names: pr.labels.map(label => label.name),
+        milestone: pr.milestone ? {
+          id: pr.milestone.id,
+          number: pr.milestone.number,
+          description: pr.milestone.description,
+          title: pr.milestone.title,
+          state: pr.milestone.state,
+        } : null,
+        created_at: convertDateString(pr.created_at),
+        closed_at: convertDateString(pr.closed_at),
+        merged_at: convertDateString(pr.merged_at),
+        merge_commit_sha: pr.merge_commit_sha,
+        assignees: pr.assignees.map(assignee => assignee.login),
+      }));
+
+      
+      // console.log(JSON.stringify(`pullRequestDetails = ${pullRequestDetails}`))
+
+      all_prs.push(...pullRequestDetails)
+      if (pullRequestDetails.length < PER_PAGE) {
+        break
+      }
+      start_page += 1
+    }
+
+    console.log(`${JSON.stringify(functionArgs)}, result = ${all_prs.length}}`)
+
+    if(group_field === '') {
+      fields.forEach( field => (
+        all_prs = all_prs.map(obj => _.omit(obj, field))
+      ))
+      return all_prs;
+    }
+    
+    const group_pr_items = _.mapValues(_.groupBy(all_prs, group_field), (pr_items) => {
+      fields.forEach( field => (
+        pr_items = pr_items.map(obj => _.omit(obj, field))
+      ))
+      return need_pr_items_ingroup ? {
+        total: pr_items.length,
+        pr_items: pr_items
+      } : {
+        total: pr_items.length
+      }
+    });
+    return group_pr_items;
+  } catch (error) {
+    console.error("Error fetching pull requests: ", error);
+    return null;
+  }
+}
+
+async function fetchPullRequestDetails(owner, repo, pull_number) {
+  try {
+    const response = await octokit.pulls.get({
+      owner,
+      repo,
+      pull_number,
+    });
+
+    return {
+      additions: response.data.additions,
+      deletions: response.data.deletions,
+    };
+  } catch (error) {
+    console.error(`Error fetching details for PR #${pull_number}: `, error);
+    return {
+      additions: 0,
+      deletions: 0,
+    };
+  }
+}
+
+function convertDateString(dateString) {
+  try {
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+  } catch (error) {
+    return null
+  }
+}
+
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
