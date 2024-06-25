@@ -3,12 +3,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import {
-  pr_info,
-  getPullRequestDetails,
-  getPullRequestComments,
-  getCommitsBetween,
-  listPullRequests,
-  listPullRequests_desc
+  // pr_info,
+  // getPullRequestDetails,
+  // getPullRequestComments,
+  // getCommitsBetween,
+  // listPullRequests,
+  // listPullRequests_desc,
+  searchPullRequests_desc,
+  searchPullRequests
 } from './git.js'
 
 import {
@@ -17,11 +19,11 @@ import {
 } from './gen_chart.js'
 
 const tools = [
-  listPullRequests_desc,
+  searchPullRequests_desc,
   register_chart_desc
 ];
 const availableFunctions = {
-  listPullRequests: listPullRequests,
+  searchPullRequests: searchPullRequests,
   register_chart: register_chart
 };
 
@@ -116,8 +118,8 @@ async function handle_stream_response(response, res) {
     } else {
       const [choice] = chunk.choices;
       const { content } = choice.delta;
-      console.log(`func_name = ${func_name}`)
-      console.log(`chunk = ${JSON.stringify(chunk)}`)
+      // console.log(`func_name = ${func_name}`)
+      // console.log(`chunk = ${JSON.stringify(chunk)}`)
       res.write(sse_message(content))
     }
   }
@@ -194,6 +196,6 @@ function textToBase64(text) {
     const buffer = Buffer.from(text, 'utf-8');
     return buffer.toString('base64');
   } catch (error) {
-    console.log(`ERROR TEXT = ${text}`)
+    // console.log(`ERROR TEXT = ${text}`)
   }
 }

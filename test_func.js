@@ -1,7 +1,9 @@
-import { pr_info, searchPullRequests } from './service/git.js'
+// import { create } from 'lodash';
+import { searchPullRequests } from './service/git.js'
 
 const startServer = async () => {
-  let result = await searchPullRequests()
+  // {"owner":"apple","repo_name":"swift","state":"open","labels":["actor"],"group_field":"user_login"}
+  let result = await searchPullRequests(JSON.parse(` {"owner":"swiftlang","repo_name":"swift","state":"open","labels":["swift 6.0"],"group_field":"user_login", "fields":["title"], "need_pr_items_ingroup": true}`))
   let json = JSON.stringify(result, false, 4)
   
   console.log(json)
