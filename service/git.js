@@ -363,7 +363,7 @@ export async function searchPullRequests(functionArgs) {
   // 'html_url' => URL của pr
   // 'comments' => Số comment trong pr
   const group_field = functionArgs.group_field ?? ``  // (String) cho phép group các pull request lại theo các field của tham số field
-  const need_pr_items_ingroup = functionArgs.need_pr_items_ingroup ?? false // (Boolean) False: Kết quả trả về KHÔNG CÓ thông tin chi tiết các pull request trong group.
+  const need_pr_items_ingroup = functionArgs.need_pr_items_ingroup ?? true // (Boolean) False: Kết quả trả về KHÔNG CÓ thông tin chi tiết các pull request trong group.
 
   // SEARCH PARAM
   const owner = functionArgs.owner ?? 'apple' // (String) Chỉ định owner cụ thể
@@ -394,10 +394,10 @@ export async function searchPullRequests(functionArgs) {
     'html_url',
     'comments',
   ]
-  console.log(`hidden_fields1 = ${JSON.stringify(hidden_fields)}`)
-  console.log(`fields = ${JSON.stringify(fields)}`)
+  // console.log(`hidden_fields1 = ${JSON.stringify(hidden_fields)}`)
+  // console.log(`fields = ${JSON.stringify(fields)}`)
   hidden_fields = _.difference(hidden_fields, fields)
-  console.log(`hidden_fields2 = ${JSON.stringify(hidden_fields)}`)
+  // console.log(`hidden_fields2 = ${JSON.stringify(hidden_fields)}`)
 
   const PER_PAGE = 100
   let start_page = 1
@@ -461,13 +461,7 @@ export async function searchPullRequests(functionArgs) {
         body: pr.body,
         comments: pr.comments,
         label_names: pr.labels.map(label => label.name),
-        milestone: pr.milestone ? {
-          id: pr.milestone.id,
-          number: pr.milestone.number,
-          description: pr.milestone.description,
-          title: pr.milestone.title,
-          state: pr.milestone.state,
-        } : null,
+        milestone: pr.milestone ? pr.milestone.title : "[none]",
         created_at: convertDateString(pr.created_at),
         closed_at: convertDateString(pr.closed_at),
         merged_at: convertDateString(pr.merged_at),
@@ -522,7 +516,7 @@ function merge_or(builder, array, key, quote = false) {
   if(array.length == 1) {
     builder.push(`${key}:${copyArray[0]}`)
   } else {
-    builder.push( "(" + copyArray.map(a => `${key}:${a}`).join(' OR ') + ")")
+    builder.push( "(" + copyArray.map(a => `${key}:${a}`).join(' ') + ")")
   }
 }
 
