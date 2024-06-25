@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import dotenv from 'dotenv';
+import _ from "lodash";
 dotenv.config();
 
 import {
@@ -136,6 +137,12 @@ async function handle_stream_response(response, res) {
   }
 }
 
+function omit_func_arguments(finish_reason) {
+  let clone = _.clone(finish_reason)
+  clone.arguments = null
+  return clone
+}
+
 export async function streamWithFunctions2(requestMessage, res) {
   // Step 1: send the conversation and available functions to the model
   const messages = [
@@ -165,7 +172,7 @@ If the user requests to draw charts, use the provided "register_chart" function,
 
       messages.push({
         role: "assistant",
-        tool_calls: [finish_reason.tool_calls],
+        tool_calls: [ omit_func_arguments(finish_reason.tool_calls)],
       })
 
       messages.push({
