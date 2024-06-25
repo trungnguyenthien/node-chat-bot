@@ -14,7 +14,7 @@ export async function searchPullRequests(functionArgs) {
   const fields = _.defaultTo(functionArgs.fields, []) // (Array String) Các field sẽ được trả về trong response, giá trị của các field gồm có
   // 'state' => Trạng thái open/closed
   // 'title' =>  Title pr
-  // 'user_login' => ID của user tạo pr
+  // 'user' => ID của user tạo pr
   // 'body' => Description của pr
   // 'label_names' => Labels
   // 'milestone' => Milestone
@@ -45,7 +45,7 @@ export async function searchPullRequests(functionArgs) {
   let hidden_fields = [
     'state', 
     'title',
-    'user_login',
+    'user',
     'body',
     'label_names',
     'milestone',
@@ -119,7 +119,7 @@ export async function searchPullRequests(functionArgs) {
         state: pr.state,
         lock: pr.lock,
         title: pr.title,
-        user_login: pr.user.login,
+        user: pr.user.login,
         body: pr.body,
         comments: pr.comments,
         label_names: pr.labels.map(label => label.name),
@@ -202,7 +202,7 @@ export const searchPullRequests_desc = {
         fields: {
           type: "array",
           items: { type: "string" },
-          description: "Array of fields to be returned in the response. Possible values include: 'state', 'title', 'user_login', 'body', 'label_names', 'milestone', 'created_at', 'closed_at', 'merged_at', 'assignees', 'html_url', 'comments'.",
+          description: "Array of fields to be returned in the response. Possible values include: 'state', 'title', 'user', 'body', 'label_names', 'milestone', 'created_at', 'closed_at', 'merged_at', 'assignees', 'html_url', 'comments'.",
         },
         group_field: {
           type: "string",

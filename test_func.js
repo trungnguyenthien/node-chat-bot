@@ -2,7 +2,7 @@
 import { searchPullRequests } from './service/git.js'
 
 const startServer = async () => {
-  // {"owner":"apple","repo_name":"swift","state":"open","labels":["actor"],"group_field":"user_login"}
+  // {"owner":"apple","repo_name":"swift","state":"open","labels":["actor"],"group_field":"user"}
   let result = await searchPullRequests(JSON.parse(` {"owner":"swiftlang","repo_name":"swift" ,"group_field":"user_login", "state": "closed", "fields":["title"], "merged":"2024-04-01..2024-04-04", "need_pr_items_ingroup": true}`))
   let json = JSON.stringify(result, false, 4)
   
@@ -16,10 +16,5 @@ Lấy tất cả pull request trong repository swiftlang/swift. Yêu cầu:
 - Thông tin mỗi pull request cần lấy là title, number
 - Gom nhóm theo user
 
-Kết quả trả về hiển thị trong Table gồm các cột:
-- User
-- Số pull request của user đó
-- List title các pull request (xuống hàng bằng tag BR)
-
-Xuất hình ảnh bar chart thể hiện số pull request của mỗi user (Đừng xuất table thêm lần nữa nhé)
+Xuất hình ảnh bar chart thể hiện số pull request của mỗi user.
 */
