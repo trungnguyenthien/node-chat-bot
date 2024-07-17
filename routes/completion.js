@@ -4,10 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { streamWithFunctions2 } from '../service/openai.js'
 const router = express.Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // Set the API key here
-});
-
 // router.post('/', async (req, res) => {
 //   try {
 //     const message = req.rawBody;

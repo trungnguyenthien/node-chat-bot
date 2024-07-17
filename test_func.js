@@ -10,11 +10,3 @@ const startServer = async () => {
 };
 
 startServer();
-/*
-Lấy tất cả pull request trong repository swiftlang/swift. Yêu cầu:
-- Pull Request được merge trong khoảng 2024-04-01 đến 2024-04-02
-- Thông tin mỗi pull request cần lấy là title, number
-- Gom nhóm theo user
-
-Xuất hình ảnh bar chart thể hiện số pull request của mỗi user.
-*/
